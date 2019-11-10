@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title> Intersection Congestion</title>
+      <link rel = "icon" type = "image/png" href = "https://cdn.glitch.com/76e174c6-9b98-4e90-a5a2-7d0e951fa072%2FBus.svg?v=1573366059787">
+    <!-- For apple devices -->
+    <link rel = "apple-touch-icon" type = "image/png" href = "https://cdn.glitch.com/76e174c6-9b98-4e90-a5a2-7d0e951fa072%2FBus.svg?v=1573366059787"/>
+  <meta name="viewport" content="initial-scale=1.0" />
+    <meta charset="utf-8" />
+    <style>
+      /* Always set the map height explicitly to define the size of the div
+       * element that contains the map. */
+      #map {
+        height: 100%;
+      }
+      /* Optional: Makes the sample page fill the window. */
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+
+      .num {
+        font-size: 2.5 rem;
+      }
+    </style>
+    <link
+      rel="stylesheet"
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+      integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T"
+      crossorigin="anonymous"
+    />
+  </head>
+  <body>
+    <nav class="navbar navbar-dark bg-dark">
+      <a class="navbar-brand display-1" href="#"
+        >Vancouver Intersection Congestion</a
+      >
+      <div class="btn-group" role="group">
+        <button
+          type="button"
+          class="btn btn-light"
+          data-toggle="button"
+          onclick="showLowCongestion()"
+        >
+          <img
+            src="https://cdn.glitch.com/76e174c6-9b98-4e90-a5a2-7d0e951fa072%2Fcircular-shape-silhouette.svg?v=1573350400761"
+            height="25"
+          />
+          <span class="align-middle">
+            Light
+          </span>
+        </button>
+        <button
+          type="button"
+          class="btn btn-light"
+          data-toggle="button"
+          onclick="showMedCongection()"
+        >
+          <img
+            src="https://cdn.glitch.com/76e174c6-9b98-4e90-a5a2-7d0e951fa072%2Fwarning.svg?v=1573350396290"
+            height="25"
+          />
+          <span class="align-middle">
+            Medium
+          </span>
+        </button>
+        <button
+          type="button"
+          class="btn btn-light"
+          data-toggle="button"
+          onclick="showHighCongestion()"
+        >
+          <img
+            src="https://cdn.glitch.com/76e174c6-9b98-4e90-a5a2-7d0e951fa072%2Fbutton3.svg?v=1573366585250"
+            height="25"
+          />
+          <span class="align-middle">
+            High
+          </span>
+        </button>
+        <button
+          type="button"
+          class="btn btn-info"
+          data-toggle="button"
+          onclick="showAll()"
+        >
+          All
+        </button>
+      </div>
+    </nav>
+    <div id="alerts"></div>
+    <div id="map"></div>
+    <script>
+      var intersections = [];
+      var markers = [];
+      var map;
+      var infoWindow;
+
+      // NOTE: use class="align-middle on text next to Image"
+      // source: https://stackoverflow.com/questions/43759462/bootstrap-4-button-align-text-with-icon
+      const busImage =
+        '<img src="https://cdn.glitch.com/76e174c6-9b98-4e90-a5a2-7d0e951fa072%2FBus.svg?v=1573366059787" height="28"/>';
+      const carImage =
+        '<img src="https://cdn.glitch.com/76e174c6-9b98-4e90-a5a2-7d0e951fa072%2FCar.svg?v=1573366066283" height="28"/>';
+      const numberImage =
+        '<img src="https://cdn.glitch.com/76e174c6-9b98-4e90-a5a2-7d0e951fa072%2Fnumber.png?v=1573369927858" height="15"/>';
+      const rainyImage =
+        '<img src="https://cdn.glitch.com/76e174c6-9b98-4e90-a5a2-7d0e951fa072%2Frainy.svg?v=1573369930558" height="25"/>';
+      const stopwatchImage =
+        '<img src="https://cdn.glitch.com/76e174c6-9b98-4e90-a5a2-7d0e951fa072%2Fstopwatch.svg?v=1573369936922" height="25"/>';
+      const glassesImage =
+        '<img src="https://cdn.glitch.com/76e174c6-9b98-4e90-a5a2-7d0e951fa072%2Fglasses.svg?v=1573369939729" height="25"/>';
+      const compassImage =
+        '<img src="https://cdn.glitch.com/76e174c6-9b98-4e90-a5a2-7d0e951fa072%2Fcompass.svg?v=1573372713215" height="70"/>';
+      const congImage =
+        '<img src="https://cdn.glitch.com/76e174c6-9b98-4e90-a5a2-7d0e951fa072%2Ftraffic-svgrepo-com.svg?v=1573382537420" height="25"/>';
+
+      const lowCongestionIconUrl =
+        "https://cdn.glitch.com/76e174c6-9b98-4e90-a5a2-7d0e951fa072%2Fcircular-shape-silhouette.svg?v=1573350400761";
+      const mediumCongestionIconUrl =
+        "https://cdn.glitch.com/76e174c6-9b98-4e90-a5a2-7d0e951fa072%2Fwarning.svg?v=1573350396290";
+      const highCongestionIconUrl =
+        "https://cdn.glitch.com/76e174c6-9b98-4e90-a5a2-7d0e951fa072%2Fbutton3.svg?v=1573366585250";
+
+      function showLowCongestion() {
+        console.log("Displaying intersection markers 0-0.5 congestion level");
+        drop(intersections, 0, 0.5);
+      }
+      function showMedCongection() {
+        console.log("Displaying intersection markers 0.5-0.8 congestion level");
+        drop(intersections, 0.5, 0.8);
+      }
+      function showHighCongestion() {
+        console.log("Displaying intersection markers 0.8-1 congestion level");
+        drop(intersections, 0.8, 1);
+      }
+      function showAll() {
+        drop(intersections, 0, 1);
+      }
+      function getLevelOfCongestion(congestionValue) {
+        if (congestionValue < 0 || congestionValue > 1) {
+          return "invalid";
+        }
+        if (congestionValue < 0.5) {
+          return "low";
+        } else if (congestionValue < 0.8) {
+          return "med";
+        } else {
+          return "high";
+        }
+      }
+
+      async function setInter() {
+        return getCongData()
+          .then(data => {
+            console.log(data);
+            for (let record of data.locations) {
+              let intersection = {
+                name: record.name,
+                lat: record.lat,
+                lng: record.lng,
+                visib: record.visib,
+                precip: record.precip,
+                congest: record.congest,
+                count: record.count,
+                dirs: record.dirs
+              };
+              intersections.push(intersection);
+            }
+            return intersections;
+          })
+          .catch(err => {
+            console.log(err);
+          });
+      }
+
+      async function getCongData() {
+        var targetUrl =
+          "https://us-central1-ashcon-app.cloudfunctions.net/decode-omnibus";
+        return fetch(targetUrl)
+          .then(res => res.json())
+          .then(out => {
+            return out;
+          })
+          .catch(err => {
+            console.error(err);
+          });
+      }
+
+      function initMap() {
+        map = new google.maps.Map(document.getElementById("map"), {
+          zoom: 12,
+          center: { lat: 49.25, lng: -123.13 },
+          mapTypeId: "terrain"
+        });
+        var customStyled = [
+          {
+            featureType: "transit",
+            elementType: "labels",
+            stylers: [{ visibility: "off" }]
+          },
+          {
+            featureType: "road",
+            elementType: "labels",
+            stylers: [{ visibility: "off" }]
+          },
+          {
+            featureType: "poi",
+            elementType: "labels",
+            stylers: [{ visibility: "off" }]
+          }
+        ];
+        map.set("styles", customStyled);
+
+        var trafficLayer = new google.maps.TrafficLayer();
+        trafficLayer.setMap(map);
+        setInter().then(data => {
+          drop(intersections, 0, 1);
+          for (let intersection of intersections) {
+            if (intersection.congest > 0.95) {
+              postAlert(intersection.name, intersection.congest);
+            }
+          }
+
+          google.maps.event.addListener(map, "click", function() {
+            if (infoWindow) {
+              infoWindow.close();
+            }
+            map.panTo(new google.maps.LatLng(49.25, -123.13));
+          });
+        });
+      }
+
+      function drop(intersections, lowBound, upBound) {
+        clearMarkers();
+        for (let intersection of intersections) {
+          if (
+            intersection.congest >= lowBound &&
+            intersection.congest < upBound
+          ) {
+            addMarker(intersection);
+          }
+        }
+      }
+
+      function addMarker(intersection) {
+        var LatLng = { lat: intersection.lat, lng: intersection.lng };
+
+        let N = false;
+        let E = false;
+        let S = false;
+        let W = false;
+        var wait, nCars, nBuses, wCars, wBuses, sCars, sBuses, eCars, eBuses;
+        nCars = nBuses = wCars = wBuses = sCars = sBuses = eCars = eBuses = 0;
+        var totalWait = 0;
+        var inc = 0;
+
+        for (let dirc of intersection.dirs) {
+          totalWait += dirc.wait;
+          if (dirc.direction == "north") {
+            N = true;
+            nCars = dirc.cars;
+            nBuses = dirc.buses;
+          } else if (dirc.direction == "west") {
+            W = true;
+            wCars = dirc.cars;
+            wBuses = dirc.buses;
+          } else if (dirc.direction == "south") {
+            S = true;
+            sCars = dirc.cars;
+            sBuses = dirc.buses;
+          } else if (dirc.direction == "east") {
+            E = true;
+            eCars = dirc.cars;
+            eBuses = dirc.buses;
+          }
+          inc++;
+        }
+
+        wait = totalWait / inc;
+
+        message =
+          '<h4 style="text-align: center;">' +
+          intersection.name +
+          "</h2>" +
+          '<table align="center" class="table table-bordered">' +
+          "<tbody>" +
+          "<tr>" +
+          "<td>" +
+          congImage +
+          " " +
+          intersection.congest.toFixed(2) +
+          "</td>" +
+          "<td>" +
+          glassesImage +
+          "<span class='align-middle'>      " +
+          intersection.visib +
+          "</span></td>" +
+          "</tr>" +
+          "<tr>" +
+          "<td>" +
+          numberImage +
+          "<span class='align-middle'>      " +
+          intersection.count / 2 +
+          "</span></td>" +
+          "<td>" +
+          rainyImage +
+          "<span class='align-middle'>      " +
+          intersection.precip +
+          "</span></td>" +
+          "</tr>" +
+          "</tbody>" +
+          "</table>" +
+          '<table class="align-middle" border="0">' +
+          "<tbody class='align-middle'>" +
+          "<tr>" +
+          '<td style="text-align: center;">&nbsp;</td>' +
+          '<td style="text-align: center;">' +
+          "<p>" +
+          stopwatchImage +
+          "<span class='align-middle'>      " +
+          wait +
+          " </span></p>" +
+          "<p>" +
+          carImage +
+          "<span class='align-middle'>      " +
+          nCars +
+          "     " +
+          busImage +
+          "       " +
+          nBuses +
+          "</span></p>" +
+          "</td>" +
+          '<td style="text-align: center;">&nbsp;</td>' +
+          "</tr>" +
+          "<tr>" +
+          '<td style="text-align: center;">' +
+          "<p>" +
+          carImage +
+          "<span class='align-middle'>      " +
+          wCars +
+          "</span></p>" +
+          "<p>" +
+          busImage +
+          "<span class='align-middle'>      " +
+          wBuses +
+          "</span></p>" +
+          "</td>" +
+          '<td style="text-align: center;">' +
+          compassImage +
+          "</td>" +
+          '<td style="text-align: center;">' +
+          "<p>" +
+          carImage +
+          "<span class='align-middle'>      " +
+          eCars +
+          "</span></p>" +
+          "<p>" +
+          busImage +
+          "<span class='align-middle'>      " +
+          eBuses +
+          "</span></p>" +
+          "</td>" +
+          "</tr>" +
+          "<tr>" +
+          '<td style="text-align: center;">&nbsp;</td>' +
+          '<td style="text-align: center;">' +
+          "<p>" +
+          carImage +
+          "<span class='align-middle'>      " +
+          sCars +
+          "     " +
+          busImage +
+          "       " +
+          sBuses +
+          "</span></p>" +
+          "</td>" +
+          '<td style="text-align: center;">&nbsp;</td>' +
+          "</tr>" +
+          "</tbody>" +
+          "</table>";
+
+        let congestionLevel = getLevelOfCongestion(intersection.congest);
+        let theIcon = {};
+        switch (congestionLevel) {
+          case "high":
+            theIcon = {
+              url: highCongestionIconUrl,
+              scaledSize: new google.maps.Size(20, 20),
+              origin: new google.maps.Point(0, 0),
+              anchor: new google.maps.Point(0, 0)
+            };
+            break;
+          case "med":
+            theIcon = {
+              url: mediumCongestionIconUrl,
+              scaledSize: new google.maps.Size(20, 20),
+              origin: new google.maps.Point(0, 0),
+              anchor: new google.maps.Point(0, 0)
+            };
+            break;
+          case "low":
+            theIcon = {
+              url: lowCongestionIconUrl,
+              scaledSize: new google.maps.Size(12, 12),
+              origin: new google.maps.Point(0, 0),
+              anchor: new google.maps.Point(0, 0)
+            };
+            break;
+          default:
+            console.log("invalid congestion level");
+            return;
+        }
+        var mark = new google.maps.Marker({
+          position: LatLng,
+          title: intersection.name,
+          map: map,
+          icon: theIcon,
+          animation: google.maps.Animation.DROP
+        });
+
+        addInfoWindow(mark, message);
+        markers.push(mark);
+      }
+
+      function postAlert(name, congestion) {
+        const alertString =
+          '   <div class="alert alert-danger alert-dismissible fade show" role="alert" style="margin-bottom: 0rem !important;">  ' +
+          "         <strong>High Congestion Alert</strong>   " +
+          name +
+          " has a congestion value of " +
+          congestion +
+          "!" +
+          "         <button  " +
+          '           type="button"  ' +
+          '           class="close"  ' +
+          '           data-dismiss="alert"  ' +
+          '           aria-label="Close"  ' +
+          "         >  " +
+          '        <span aria-hidden="true">x</span>  ' +
+          "         </button>  " +
+          "      </div>  ";
+
+        var para = document.createElement("div");
+        para.innerHTML = alertString;
+        var body = document.getElementById("alerts");
+        body.appendChild(para);
+        document.getElementById("alerts").style.display = "block";
+      }
+      function addInfoWindow(marker, message) {
+        infoWindow = new google.maps.InfoWindow({
+          content: message
+        });
+
+        google.maps.event.addListener(marker, "click", function() {
+          if (infoWindow) {
+            infoWindow.close();
+          }
+          infoWindow = new google.maps.InfoWindow({
+            content: message
+          });
+
+          infoWindow.open(map, marker);
+        });
+      }
+
+      function clearMarkers() {
+        for (var i = 0; i < markers.length; i++) {
+          markers[i].setMap(null);
+        }
+        markers = [];
+      }
+    </script>
+    <script
+      src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAW1BMSAQL6ENn__6Hw043RC8Qwy0sH4zk&callback=initMap"
+      async
+      defer
+    ></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/js/bootstrap.min.js"></script>
+  </body>
+</html>
